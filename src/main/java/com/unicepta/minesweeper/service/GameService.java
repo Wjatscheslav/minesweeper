@@ -5,6 +5,7 @@ import static com.unicepta.minesweeper.persistence.entity.BoardEntity.buildNewBo
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.unicepta.minesweeper.api.dto.Board;
 import com.unicepta.minesweeper.api.dto.CreateGameRequest;
@@ -42,12 +43,14 @@ public class GameService {
     uncoverNeighbours(board, tile, visited);
     updateBoardEntity(visited, boardEntity);
     
-    return board;
+    return new Board(boardEntity);
   }
 
   private void updateBoardEntity(Set<Tile> visited, BoardEntity entity) {
     for (Tile tile: visited) {
-      entity.getTiles()[(tile.getxAxis() + 1) * (tile.getyAxis() + 1)].setHidden(false);
+      Stream.of(entity.getTiles())
+          .filter(tileEntity -> tileEntity.getxAxis() == tile.getxAxis() && tileEntity.getyAxis() == tile.getyAxis())
+          .forEach(tileEntity -> tileEntity.setHidden(false));
     }
     boardRepository.update(entity);
   }

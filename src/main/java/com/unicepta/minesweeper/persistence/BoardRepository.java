@@ -1,5 +1,6 @@
 package com.unicepta.minesweeper.persistence;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,6 +15,7 @@ public class BoardRepository {
   public void create(BoardEntity board) {
     var id = ID_GENERATOR.incrementAndGet();
     board.setId(id);
+    Arrays.stream(board.getTiles()).forEach(tile -> tile.setBoardId(id));
     BOARD_STORAGE.put(id, board);
   }
 

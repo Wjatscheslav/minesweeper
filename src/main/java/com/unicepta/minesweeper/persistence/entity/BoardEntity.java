@@ -7,8 +7,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import com.unicepta.minesweeper.api.dto.Board;
-
 public class BoardEntity {
 
   public BoardEntity(int width, int height, TileEntity[] tiles) {
@@ -28,7 +26,7 @@ public class BoardEntity {
     var tiles = new TileEntity[width * height];
     for (int i = 0; i < width * height; i++) {
       var tileValue = minesIndexes.contains(i) ? MINE : EMPTY;
-      var tile = new TileEntity(tileValue, i / width, i % width - 1);
+      var tile = new TileEntity(tileValue, i % width, i / width);
       tiles[i] = tile;
     }
 
@@ -37,7 +35,10 @@ public class BoardEntity {
 
   private static Set<Integer> getMinesIndexes(int numberOfMines, int tilesCount) {
     int numberBound = Math.min(numberOfMines, tilesCount);
-    return ThreadLocalRandom.current().ints(0, tilesCount).distinct().limit(numberOfMines)
+    if (numberBound == 0) {
+      numberBound++;
+    }
+    return ThreadLocalRandom.current().ints(0, numberBound).distinct().limit(numberOfMines)
         .boxed()
         .collect(Collectors.toSet());
   }

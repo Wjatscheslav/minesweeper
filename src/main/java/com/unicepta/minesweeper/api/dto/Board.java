@@ -6,17 +6,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import javax.xml.bind.annotation.XmlTransient;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.unicepta.minesweeper.persistence.entity.BoardEntity;
 import com.unicepta.minesweeper.persistence.entity.TileEntity;
 
+@JsonIgnoreProperties({"tilesGraph"})
 public class Board {
 
   private int id;
   private final int width;
   private final int height;
-  @XmlTransient
   private transient final Map<Tile, LinkedList<Tile>> tilesGraph;
   private boolean gameLost = false;
   private final Tile[] tiles;
@@ -36,6 +35,7 @@ public class Board {
         .map(Tile::new)
         .toArray(tile -> new Tile[entity.getTiles().length]);
     this.tilesGraph = new HashMap<>();
+    this.gameLost = entity.isGameLost();
     fillAdjacencyList(entity);
   }
 
@@ -43,6 +43,9 @@ public class Board {
     for (TileEntity tileEntity: entity.getTiles()) {
       Tile tile = new Tile(tileEntity);
       tilesGraph.put(tile, new LinkedList<>());
+    }
+    for (TileEntity tileEntity: entity.getTiles()) {
+      Tile tile = new Tile(tileEntity);
       int xAxis = tile.getxAxis();
       int yAxis = tile.getyAxis();
 

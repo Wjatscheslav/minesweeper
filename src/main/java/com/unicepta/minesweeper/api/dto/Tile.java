@@ -4,18 +4,13 @@ import static com.unicepta.minesweeper.api.dto.enums.TileValues.HIDDEN;
 
 import java.util.Objects;
 
-import javax.xml.bind.annotation.XmlTransient;
-
 import com.unicepta.minesweeper.persistence.entity.TileEntity;
 
 public class Tile {
 
   private char value;
-  @XmlTransient
   private int boardId;
-  @XmlTransient
   private int xAxis;
-  @XmlTransient
   private int yAxis;
 
   public Tile() {
@@ -23,6 +18,7 @@ public class Tile {
   }
 
   public Tile(TileEntity entity) {
+    this.boardId = entity.getBoardId();
     this.value = entity.isHidden() ? HIDDEN : entity.getValue();
     this.boardId = entity.getBoardId();
     this.xAxis = entity.getxAxis();
@@ -47,17 +43,14 @@ public class Tile {
     return boardId;
   }
 
-  @XmlTransient
   public void setBoardId(int boardId) {
     this.boardId = boardId;
   }
 
-  @XmlTransient
   public void setxAxis(int xAxis) {
     this.xAxis = xAxis;
   }
 
-  @XmlTransient
   public void setyAxis(int yAxis) {
     this.yAxis = yAxis;
   }

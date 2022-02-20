@@ -3,6 +3,8 @@ package com.unicepta.minesweeper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unicepta.minesweeper.api.dto.Board;
 import com.unicepta.minesweeper.api.dto.CreateGameRequest;
+import com.unicepta.minesweeper.api.dto.Tile;
+
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
@@ -63,11 +65,19 @@ class IntegrationTest {
     try (var client = HttpClients.createDefault()) {
       var response = client.execute(post);
       assertEquals(200, response.getStatusLine().getStatusCode());
-
       var data = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
       var board = new ObjectMapper().readValue(data, Board.class);
-      long hiddenCount = getCountByValue(board, HIDDEN);
-      long minesCount = getCountByValue(board, MINE);
+      var checkRequest = new HttpPost("http://localhost:8080/games/check");
+      Tile tile = new Tile(0, 0, board.getId());
+      var checkPayload = new ObjectMapper().writeValueAsString(tile);
+      checkRequest.setEntity(new StringEntity(checkPayload));
+      checkRequest.setHeader("Content-type", "application/json");
+      var checkResponse = client.execute(checkRequest);
+      assertEquals(200, checkResponse.getStatusLine().getStatusCode());
+      var checkData = EntityUtils.toString(checkResponse.getEntity(), StandardCharsets.UTF_8);
+      var checkBoard = new ObjectMapper().readValue(checkData, Board.class);
+      long hiddenCount = getCountByValue(checkBoard, HIDDEN);
+      long minesCount = getCountByValue(checkBoard, MINE);
       assertEquals(0, hiddenCount);
       assertEquals(0, minesCount);
     }
@@ -76,17 +86,25 @@ class IntegrationTest {
   @Test
   public void shouldLoseTheGameIfMineWasChecked() throws Exception {
     var post = new HttpPost("http://localhost:8080/games");
-    var payload = new ObjectMapper().writeValueAsString(new CreateGameRequest(3, 3, 0));
+    var payload = new ObjectMapper().writeValueAsString(new CreateGameRequest(3, 3, 9));
     post.setEntity(new StringEntity(payload));
     post.setHeader("Content-type", "application/json");
 
     try (var client = HttpClients.createDefault()) {
       var response = client.execute(post);
       assertEquals(200, response.getStatusLine().getStatusCode());
-
       var data = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
       var board = new ObjectMapper().readValue(data, Board.class);
-      assertTrue(board.isGameLost());
+      var checkRequest = new HttpPost("http://localhost:8080/games/check");
+      Tile tile = new Tile(0, 0, board.getId());
+      var checkPayload = new ObjectMapper().writeValueAsString(tile);
+      checkRequest.setEntity(new StringEntity(checkPayload));
+      checkRequest.setHeader("Content-type", "application/json");
+      var checkResponse = client.execute(checkRequest);
+      assertEquals(200, checkResponse.getStatusLine().getStatusCode());
+      var checkData = EntityUtils.toString(checkResponse.getEntity(), StandardCharsets.UTF_8);
+      var checkBoard = new ObjectMapper().readValue(checkData, Board.class);
+      assertTrue(checkBoard.isGameLost());
     }
   }
 
