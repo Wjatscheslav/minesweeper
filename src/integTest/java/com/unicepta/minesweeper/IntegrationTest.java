@@ -1,13 +1,17 @@
 package com.unicepta.minesweeper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.unicepta.minesweeper.api.Board;
-import com.unicepta.minesweeper.api.CreateGameRequest;
+import com.unicepta.minesweeper.api.dto.Board;
+import com.unicepta.minesweeper.api.dto.CreateGameRequest;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
+
 import org.apache.http.client.methods.HttpPost;
 
+import static com.unicepta.minesweeper.api.dto.enums.TileValues.HIDDEN;
+import static com.unicepta.minesweeper.api.dto.enums.TileValues.MINE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
@@ -48,4 +52,48 @@ class IntegrationTest {
       assertEquals(9, board.getWidth());
     }
   }
+
+  @Test
+  public void shouldUnhideAllElementsIfThereAreNoMines() throws Exception {
+    var post = new HttpPost("http://localhost:8080/games");
+    var payload = new ObjectMapper().writeValueAsString(new CreateGameRequest(3, 3, 0));
+    post.setEntity(new StringEntity(payload));
+    post.setHeader("Content-type", "application/json");
+
+    try (var client = HttpClients.createDefault()) {
+      var response = client.execute(post);
+      assertEquals(200, response.getStatusLine().getStatusCode());
+
+      var data = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+      var board = new ObjectMapper().readValue(data, Board.class);
+      long hiddenCount = getCountByValue(board, HIDDEN);
+      long minesCount = getCountByValue(board, MINE);
+      assertEquals(0, hiddenCount);
+      assertEquals(0, minesCount);
+    }
+  }
+
+  @Test
+  public void shouldLoseTheGameIfMineWasChecked() throws Exception {
+    var post = new HttpPost("http://localhost:8080/games");
+    var payload = new ObjectMapper().writeValueAsString(new CreateGameRequest(3, 3, 0));
+    post.setEntity(new StringEntity(payload));
+    post.setHeader("Content-type", "application/json");
+
+    try (var client = HttpClients.createDefault()) {
+      var response = client.execute(post);
+      assertEquals(200, response.getStatusLine().getStatusCode());
+
+      var data = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+      var board = new ObjectMapper().readValue(data, Board.class);
+      assertTrue(board.isGameLost());
+    }
+  }
+
+  private long getCountByValue(Board board, char value) {
+    return Stream.of(board.getTiles())
+        .filter(tile -> tile.getValue() == value)
+        .count();
+  }
+
 }
